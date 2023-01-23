@@ -15,7 +15,7 @@ app.use("/images", express.static(path.join(__dirname, "images")));
 
 //users routes
 const users = require("./users/users.router");
-app.use("/", users);
+app.use("/users", users);
 
 //users routes
 const listings = require("./listings/listings.router");

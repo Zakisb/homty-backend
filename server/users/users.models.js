@@ -1,34 +1,35 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  username: {
+  firstName: {
     type: String,
-    required: true,
   },
-  tel: {
+  lastName: {
     type: String,
-    required: true,
+  },
+  phone: {
+    type: String,
   },
   password: {
     type: String,
-    required: true,
   },
   email: {
     type: String,
+    unique: true
   },
-  nom: {
-    type: String,
-  },
-  prenom: {
-    type: String,
+  email_verified: {
+    type:Boolean
   },
   adresse: {
     type: String,
   },
-  ville: {
+  city: {
     type: String,
   },
-  pays: {
+  zipcode:{
+    type: String,
+  },
+  country: {
     type: String,
   },
   description: {
@@ -41,6 +42,18 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  properties:{
+    type: Array
+  },
+  googleId:{
+    type:String
+  },
+  facebookId:{
+    type:String
+  },
+  questions:{
+    type: Array
+  }
 });
 
 module.exports = mongoose.model("User", userSchema);
