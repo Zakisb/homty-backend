@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 
 router.get('/test', async (req, res) => {
 	try {
-		res.send('hello')
+		res.send('hello world')
 	} catch (err) {
 		res.send(err)
 	}
