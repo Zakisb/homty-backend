@@ -6,7 +6,12 @@ const mongoose = require('mongoose');
 
 
 router.get('/test', async (req, res) => {
-	res.send('hello')
+	try {
+		res.send('hello')
+	} catch (err) {
+		res.send(err)
+	}
+
 })
 
 router.post('/sign-up', async (req, res) => {

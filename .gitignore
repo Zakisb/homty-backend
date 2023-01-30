@@ -34,5 +34,5 @@ npm-debug.log
 .DS_Store
 
 # Ignore files related to API keys
-.env
+
 
