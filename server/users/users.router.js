@@ -4,12 +4,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
-router.post('/sign-up', async (req, res) => {
 
+router.post('/sign-up', async (req, res) => {
 	// CHECK IF EMAIL EXISTS IS CORRECT
 	const emailCheck = await User.findOne({ email: req.body.email });
-	if (emailCheck) return res.status(400).send('Email already exists. please choose another one');
-
+	if (emailCheck) return res.status(409).send({ message: 'Email already exists. please choose another one.' });
 	const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
 	const addUser = new User({
@@ -28,8 +27,25 @@ router.post('/sign-up', async (req, res) => {
 	}
 });
 
+router.post('/sign-in', async (req, res) => {
+	// CHECK IF EMAIL EXISTS IS CORRECT
+	const emailCheck = await User.findOne({ email: req.body.email });
+	if (!emailCheck) return res.status(404).send({message: `Email address not found. Maybe sign up?`
+});
+	// CHECK IF PASSWORD EXISTS AND NOT LINKED TO GOOGLE
+	if (!emailCheck.password && (emailCheck.googleId || emailCheck.facebookId)) return res.status(409).send({message:`This account is already registred with Google or Facebook` });
+	// CHECK IF PASSWORD IS CORRECT
+	const validPass = await bcrypt.compare(req.body.password, emailCheck.password);
+	if (!validPass) return res.status(403).send({message:'Invalid password'});
+
+	try {
+		return res.send(emailCheck);
+	} catch (err) {
+		res.status(400).send(err);
+	}
+});
+
 router.post('/sign-in-with-google', async (req, res) => {
-	console.log('passed')
 	const { account, profile } = req.body;
 	const email = profile.email;
 	const googleId = account.providerAccountId;
@@ -55,7 +71,7 @@ router.post('/sign-in-with-google', async (req, res) => {
 		// Update the existing user with googleId
 		existingUser.googleId = googleId;
 		await existingUser.save();
-		return res.send(existingUser);
+		return res.status(204).send(existingUser);
 	}
 });
 
@@ -88,21 +104,41 @@ router.post('/sign-in-with-facebook', async (req, res) => {
 		// Update the existing user with googleId
 		existingUser.facebookId = facebookId;
 		await existingUser.save();
-		return res.send(existingUser);
+		return res.status(204).send(existingUser);
 	}
 });
 
-router.patch('/update-application-form/:id', async (req, res) => {
+router.post('/check-onboarding', async (req, res) => {
+	const existingUser = await User.findOne({ email: req.body.email });
 	try {
-		const user = await User.findOneAndUpdate({ _id:  mongoose.Types.ObjectId(req.params.id) }, {
+		res.send(existingUser.onBoarded)
+	} catch (error) {
+		res.status(400).send(error);
+	}
+});
+
+router.post('/update-application-form', async (req, res) => {
+	try {
+		const user = await User.findOneAndUpdate({ email:  req.body.email }, {
 			$set: {
 				[`questions.${req.body.step}`]: req.body.answers
 			}
-		}, { new: true, useFindAndModify: false });
+		}, { new: true });
+
 		if (!user) {
 			return res.status(404).send();
 		}
 		res.send(user);
+	} catch (error) {
+		console.log(error)
+		res.status(500).send(error);
+	}
+});
+
+router.post('/get-application-form-data', async (req, res) => {
+	const answers = await User.findOne({ email: req.body.email }, `questions.${req.body.step}` );
+	try {
+		res.send(answers);
 	} catch (error) {
 		res.status(500).send(error);
 	}

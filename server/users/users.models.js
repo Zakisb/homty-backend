@@ -51,8 +51,10 @@ const userSchema = new mongoose.Schema({
   facebookId:{
     type:String
   },
-  questions:{
-    type: Array
+  questions: {},
+  onBoarded: {
+    default:false,
+    type: Boolean
   }
 });
 

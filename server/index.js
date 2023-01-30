@@ -18,8 +18,8 @@ const users = require("./users/users.router");
 app.use("/users", users);
 
 //users routes
-const listings = require("./listings/listings.router");
-app.use("/", listings);
+const properties = require("./properties/properties.router");
+app.use("/properties", properties);
 
 //users routes
 const chats = require("./chats/chats.router");
