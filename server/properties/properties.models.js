@@ -16,9 +16,7 @@ const propertySchema = new mongoose.Schema({
     surface: {
         type: String,
     },
-    communSpaces: {
-        type: Array,
-    },
+    commonSpaces: [],
     images: [],
     deleted: {
         default: false,
@@ -27,7 +25,7 @@ const propertySchema = new mongoose.Schema({
     rooms:[
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Properties",
+            ref: "Room",
         },
     ],
 });
