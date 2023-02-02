@@ -15,14 +15,18 @@ app.use("/images", express.static(path.join(__dirname, "images")));
 
 //users routes
 const users = require("./users/users.router");
-app.use("/", users);
+app.use("/users", users);
 
-//users routes
-const listings = require("./listings/listings.router");
-app.use("/", listings);
+//properties routes
+const properties = require("./properties/properties.router");
+app.use("/properties", properties);
 
-//users routes
+//chats routes
 const chats = require("./chats/chats.router");
 app.use("/", chats);
+
+//roons routes
+const rooms = require("./rooms/rooms.router");
+app.use("/rooms", rooms);
 
 app.listen(port, () => console.log(`Server started on port ${port}`));
