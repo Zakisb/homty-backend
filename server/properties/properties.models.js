@@ -7,6 +7,9 @@ const propertySchema = new mongoose.Schema({
     description: {
         type: String,
     },
+    baths: {
+        type: String,
+    },
     type: {
       type:String
     },

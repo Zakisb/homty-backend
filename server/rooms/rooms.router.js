@@ -74,7 +74,7 @@ router.get('/', async (req, res) => {
 				}
 			}
 		]);
-		res.send(propertyRoomsList[0].rooms)
+		res.send(propertyRoomsList)
 	} catch (err) {
 		res.status(400).send(err);
 	}

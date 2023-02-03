@@ -30,13 +30,23 @@ router.get('/', async (req, res) => {
 			},
 			{"$unwind": "$properties" },
 			{$match: {"properties.deleted": false}},
-			{ "$group": {
-					'_id': '$_id',
-					'properties': { '$push': '$properties' }
-				}
-			}
+			{
+				$lookup: {
+					from: Room.collection.name,
+					localField: "properties.rooms",
+					foreignField: "_id",
+					as: "rooms",
+				},
+			},
+			{
+				$project: {
+					_id:null,
+					property: "$properties",
+					rooms: "$rooms",
+				},
+			},
 		]);
-		res.send(propertiesList[0].properties)
+		res.send(propertiesList)
 	} catch (err) {
 		res.status(400).send(err);
 	}
