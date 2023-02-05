@@ -121,4 +121,14 @@ router.patch('/title-description/:id', async (req, res) => {
 	}
 });
 
+router.delete('/:id',async (req, res) => {
+	try {
+		const deleteProperty= await Property.findOneAndUpdate({_id:  mongoose.Types.ObjectId(req.params.id)}, { deleted: true } );
+		res.send(deleteProperty)
+	} catch (err) {
+		console.log(err)
+		res.status(400).send(err);
+	}
+});
+
 module.exports = router;
