@@ -53,6 +53,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/create',  async (req, res) => {
+
 	const property = new Property({
 		type: '',
 		address: '',
@@ -99,8 +100,54 @@ router.patch('/:id', upload.array("images"), async (req, res) => {
 
 router.get('/:id', async (req, res) => {
 	try {
-		const property = await Property.findOne({ _id:  mongoose.Types.ObjectId(req.params.id)});
+		const property = await User.aggregate([
+			{$match: { properties: { $in: [mongoose.Types.ObjectId(req.params.id)]}}},
+			{
+				$lookup: {
+					from: Property.collection.name,
+					localField: "properties",
+					foreignField: "_id",
+					as: "properties",
+				},
+			},
+			{
+				$project: {
+					"property": {
+						$filter: {
+							input: "$properties",
+							as: "property",
+							cond: {
+								$eq: ["$$property._id", mongoose.Types.ObjectId(req.params.id)]
+							}
+						}
+					},
+					"user" : { "email" : "$email", "firstName" : "$firstName", "lastName" : "$lastName", "photo" : "$photo", "userId" : "$_id" }
+				}
+			},
+			{"$unwind": "$property" },
+			{
+				$lookup: {
+					from: Room.collection.name,
+					localField: "property.rooms",
+					foreignField: "_id",
+					as: "property.rooms",
+				},
+			},
+		]);
 		res.send(property);
+	} catch (err) {
+		res.status(400).send(err);
+	}
+});
+
+router.get('/owner/:id', async (req, res) => {
+	try {
+		const user = await User.findOne({
+			properties: {
+				$in: [mongoose.Types.ObjectId(req.params.id)]
+			}
+		});
+		res.send(user);
 	} catch (err) {
 		res.status(400).send(err);
 	}

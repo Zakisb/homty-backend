@@ -5,15 +5,6 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
 
-router.get('/test', async (req, res) => {
-	try {
-		res.send('hello world')
-	} catch (err) {
-		res.send(err)
-	}
-
-})
-
 router.post('/sign-up', async (req, res) => {
 	// CHECK IF EMAIL EXISTS IS CORRECT
 	const emailCheck = await User.findOne({ email: req.body.email });
