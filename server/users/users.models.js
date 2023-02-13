@@ -20,8 +20,21 @@ const userSchema = new mongoose.Schema({
   email_verified: {
     type:Boolean
   },
-  adresse: {
-    type: String,
+  personalInformations: {
+    type: Object,
+    default: {}
+  },
+  livingPreferences: {
+    type: Object,
+    default: {}
+  },
+  personnalityTraits: {
+    type: Object,
+    default: {}
+  },
+  passionsList: {
+    type: Array,
+    default: []
   },
   city: {
     type: String,
@@ -54,7 +67,7 @@ const userSchema = new mongoose.Schema({
   },
   questions: {},
   onBoarded: {
-    default:false,
+    default:true,
     type: Boolean
   }
 });

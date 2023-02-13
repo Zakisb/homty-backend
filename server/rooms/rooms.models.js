@@ -4,32 +4,22 @@ const roomSchema = new mongoose.Schema({
 	title: {
 		type: String
 	},
-	description: {
-		type: String
-	},
 	price: {
-		type: String
+		type: Number
 	},
 	surface: {
-		type: String
+		type: Number
 	},
 	availabilityDate: {
 		type: Date
 	},
-	availableSlots: {
-		type: String
+	isAvailable:{
+		default: true,
+		type: Boolean
 	},
-	desk: [],
-	lighting: [],
+	amenities: [],
+	keywords: [],
 	images: [],
-	storage: [],
-	windows: [],
-	bedding: [],
-	heating: [],
-	furniture: [],
-	technology: [],
-	privateBathroom: [],
-	sharedSpace: [],
 	deleted: {
 		default: false,
 		type: Boolean

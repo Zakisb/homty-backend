@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
 			applicantId: mongoose.Types.ObjectId(findApplicatId._id),
 			roomId: mongoose.Types.ObjectId(req.query.roomId)
 		});
-		console.log(findApplicatiom);
+
 		res.send(findApplicatiom);
 	} catch (err) {
 		console.log(err);
@@ -28,6 +28,48 @@ router.get('/:email', async (req, res) => {
 		const ownerId = await User.findOne({ email: req.params.email });
 		const property = await Application.aggregate([
 			{ $match: { ownerId: mongoose.Types.ObjectId(ownerId._id) } },
+			{
+				$lookup: {
+					from: Property.collection.name,
+					localField: 'propertyId',
+					foreignField: '_id',
+					as: 'property'
+				}
+			},
+			{
+				$lookup: {
+					from: Room.collection.name,
+					localField: 'roomId',
+					foreignField: '_id',
+					as: 'room'
+				}
+			},
+			{
+				$lookup: {
+					from: User.collection.name,
+					localField: 'applicantId',
+					foreignField: '_id',
+					as: 'applicant'
+				}
+			},
+			{ $unwind: '$property' },
+			{ $unwind: '$room' },
+			{ $unwind: '$applicant' }
+		]);
+		res.send(property);
+	} catch (err) {
+		res.status(400).send(err);
+	}
+
+});
+
+router.get('/my-applications/:email', async (req, res) => {
+	console.log(req.params.email)
+	try {
+		/*	const property = await Property.findOne({ _id:  mongoose.Types.ObjectId(req.params.id)});*/
+		const applicantId = await User.findOne({ email: req.params.email });
+		const property = await Application.aggregate([
+			{ $match: { applicantId: mongoose.Types.ObjectId(applicantId._id) } },
 			{
 				$lookup: {
 					from: Property.collection.name,

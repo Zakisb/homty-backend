@@ -10,14 +10,21 @@ const propertySchema = new mongoose.Schema({
     baths: {
         type: String,
     },
+    bedrooms: {
+        type: String,
+    },
     type: {
       type:String
     },
     address: {
-        type: String,
+        type: Object,
     },
     surface: {
-        type: String,
+        type: Number,
+    },
+    isValidated: {
+        default: false,
+        type:Boolean
     },
     commonSpaces: [],
     images: [],
