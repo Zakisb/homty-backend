@@ -5,15 +5,6 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
 
-router.get('/test', async (req, res) => {
-	try {
-		res.send('hello world')
-	} catch (err) {
-		res.send(err)
-	}
-
-})
-
 router.post('/sign-up', async (req, res) => {
 	// CHECK IF EMAIL EXISTS IS CORRECT
 	const emailCheck = await User.findOne({ email: req.body.email });
@@ -120,7 +111,11 @@ router.post('/sign-in-with-facebook', async (req, res) => {
 router.post('/check-onboarding', async (req, res) => {
 	const existingUser = await User.findOne({ email: req.body.email });
 	try {
-		res.send(existingUser.onBoarded)
+		console.log(existingUser);
+		if (!existingUser) {
+			return res.status(404).send('None');
+		}
+		res.send(existingUser)
 	} catch (error) {
 		res.status(400).send(error);
 	}
@@ -144,9 +139,69 @@ router.post('/update-application-form', async (req, res) => {
 	}
 });
 
-router.post('/get-application-form-data', async (req, res) => {
-	const answers = await User.findOne({ email: req.body.email }, `questions.${req.body.step}` );
+router.patch('/update-personal-informations', async (req, res) => {
+
 	try {
+		const user = await User.findOneAndUpdate({ email:  req.query.userEmail }, {personalInformations: req.body }, { new: true });
+
+		if (!user) {
+			return res.status(404).send();
+		}
+		res.send(user);
+	} catch (error) {
+		console.log(error)
+		res.status(500).send(error);
+	}
+});
+
+router.patch('/update-living-preferences', async (req, res) => {
+
+	try {
+		const user = await User.findOneAndUpdate({ email:  req.query.userEmail }, {livingPreferences: req.body }, { new: true });
+
+		if (!user) {
+			return res.status(404).send();
+		}
+		res.send(user);
+	} catch (error) {
+		console.log(error)
+		res.status(500).send(error);
+	}
+});
+
+router.patch('/update-personnality-traits', async (req, res) => {
+	try {
+		const user = await User.findOneAndUpdate({ email:  req.query.userEmail }, {personnalityTraits: req.body }, { new: true });
+
+		if (!user) {
+			return res.status(404).send();
+		}
+		res.send(user);
+	} catch (error) {
+		console.log(error)
+		res.status(500).send(error);
+	}
+});
+
+router.patch('/update-passions-list', async (req, res) => {
+	try {
+		const user = await User.findOneAndUpdate({ email:  req.query.userEmail }, {passionsList: req.body }, { new: true });
+		if (!user) {
+			return res.status(404).send();
+		}
+		res.send(user);
+	} catch (error) {
+		console.log(error)
+		res.status(500).send(error);
+	}
+});
+
+router.get('/get-application-form-data/:dataType', async (req, res) => {
+
+	const answers = await User.findOne({ email: req.query.userEmail }, `${req.params.dataType}` );
+
+	try {
+		console.log(answers)
 		res.send(answers);
 	} catch (error) {
 		res.status(500).send(error);

@@ -18,26 +18,20 @@ const upload = multer({ storage: storage});
 
 
 router.post('/',  upload.array('images'), async (req, res) => {
+	console.log(req.body)
 	const images = req.files.map(function(item) {
 		return item.filename
 	})
 	try {
 		const room = new Room({
-			price: JSON.parse(req.body.price).trim(),
-			surface: JSON.parse(req.body.surface),
-			/*availabilityDate:  new Date(JSON.parse(req.body.availabilityDate)),*/
-			desk:   JSON.parse(req.body.desk),
-			lighting:   JSON.parse(req.body.lighting),
-			storage:  JSON.parse(req.body.storage),
-			windows:  JSON.parse(req.body.windows),
-			bedding:  JSON.parse(req.body.bedding),
-			heating:  JSON.parse(req.body.heating),
-			furniture:  JSON.parse(req.body.furniture),
-			technology:  JSON.parse(req.body.technology),
-			privateBathroom:  JSON.parse(req.body.privateBathroom),
-			sharedSpace:  JSON.parse(req.body.sharedSpace),
+			title: req.body.title,
+			surface: req.body.surface,
+			price: req.body.price,
+			availabilityDate:  new Date(req.body.availabilityDate),
+			amenities:   req.body.amenities,
+			keywords:  req.body.keywords,
 			images: images
-		});
+		})
 
 		const saveRoom = await room.save();
 		const propertyMother = await Property.updateOne(
