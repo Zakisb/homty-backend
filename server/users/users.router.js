@@ -3,7 +3,18 @@ const User = require('./users.models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const multer = require('multer');
+const path = require('path');
 
+const storage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, path.resolve(__dirname, '..', 'documents/users'))
+	},
+	filename: function (req, file, cb) {
+		cb(null, Date.now() + file.originalname);
+	},
+});
+const upload = multer({ storage: storage});
 
 router.post('/sign-up', async (req, res) => {
 	// CHECK IF EMAIL EXISTS IS CORRECT
@@ -139,11 +150,21 @@ router.post('/update-application-form', async (req, res) => {
 	}
 });
 
-router.patch('/update-personal-informations', async (req, res) => {
+router.patch('/update-personal-informations', upload.any(),  async (req, res) => {
+
+	const personalDocuments =  req.files.filter(file => file.fieldname === 'personalDocuments').map(function(item) {
+		return item.filename
+	})
+
+	const garantPersonalDocuments =  req.files.filter(file => file.fieldname === 'garantPersonalDocuments').map(function(item) {
+		return item.filename
+	})
 
 	try {
-		const user = await User.findOneAndUpdate({ email:  req.query.userEmail }, {personalInformations: req.body }, { new: true });
+		req.body.personalDocuments = personalDocuments
+		req.body.garantPersonalDocuments = garantPersonalDocuments
 
+		const user = await User.findOneAndUpdate({ email:  req.query.userEmail }, {personalInformations: req.body }, { new: true });
 		if (!user) {
 			return res.status(404).send();
 		}
