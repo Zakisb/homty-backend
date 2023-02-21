@@ -1,10 +1,11 @@
 const router = require('express').Router();
-const Property = require('./properties.models');
+const { Document, Property } = require('./properties.models');
 const mongoose = require('mongoose');
 const User = require('../users/users.models');
 const multer = require("multer");
 const path = require('path');
 const Room = require('../rooms/rooms.models');
+const { v4: uuidv4 } = require('uuid');
 
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -15,6 +16,19 @@ const storage = multer.diskStorage({
 	},
 });
 const upload = multer({ storage: storage});
+
+const documentStorage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, path.resolve(__dirname, '..', 'documents/properties'))
+	},
+	filename: function (req, file, cb) {
+		cb(null, Date.now()  + file.originalname);
+	},
+});
+
+const uploadDocument = multer({ storage: documentStorage});
+
+
 
 router.get('/', async (req, res) => {
 	try {
@@ -211,7 +225,6 @@ router.get('/owner/:id', async (req, res) => {
 
 
 router.patch('/title-description/:id', async (req, res) => {
-	console.log(req.body)
 
 	try {
 		const property = await Property.findByIdAndUpdate(req.params.id, {
@@ -233,5 +246,37 @@ router.delete('/:id',async (req, res) => {
 		res.status(400).send(err);
 	}
 });
+
+// documents
+
+router.post('/documents', uploadDocument.array('propertyDocuments'), async (req, res) => {
+
+	try {
+		const document = new Document({
+			documentTitle: req.body.title,
+			fileName: req.files[0].filename,
+			startDate: req.body.startDate,
+			endDate: req.body.endDate,
+			documentType: req.body.documentType,
+			price: parseInt(req.body.price),
+			note: req.body.note,
+		});
+
+		const saveDocument = await document.save();
+		const property = await Property.updateOne(
+			{_id:  mongoose.Types.ObjectId(req.body.propertyId)},
+			{$push: {documents: saveDocument._id}}
+		);
+
+		res.send(property);
+	} catch (err) {
+		res.status(400).send(err);
+		console.log(err)
+	}
+});
+
+
+
+
 
 module.exports = router;

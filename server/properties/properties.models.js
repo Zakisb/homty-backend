@@ -1,5 +1,34 @@
 const mongoose = require("mongoose");
 
+
+const documentSchema = new mongoose.Schema({
+    documentTitle: {
+        type: String,
+        required: true,
+    },
+    fileName: {
+        type: String,
+        required: true,
+    },
+    startDate: {
+        type:Date
+    },
+    endDate: {
+        type:Date
+    },
+    documentType:{
+        type:String
+    },
+    price:{
+        type:Number
+    },
+    note: {
+        type:String
+    }
+});
+
+const Document = mongoose.model('Document', documentSchema);
+
 const propertySchema = new mongoose.Schema({
     title: {
         type: String,
@@ -38,5 +67,16 @@ const propertySchema = new mongoose.Schema({
             ref: "Room",
         },
     ],
+    documents: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Document",
+        },
+    ]
 });
-module.exports = mongoose.model("Property", propertySchema);
+
+const Property = mongoose.model("Property", propertySchema);
+
+module.exports = { Property, Document };
+
+

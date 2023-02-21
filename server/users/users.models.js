@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema({
     type: Object,
     default: {}
   },
+  personalDocuments: [{
+    type: Object,
+    default: {}
+  }],
   livingPreferences: {
     type: Object,
     default: {}
