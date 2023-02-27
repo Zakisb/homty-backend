@@ -179,19 +179,30 @@ router.patch('/update-personal-informations', async (req, res) => {
 
 router.patch('/update-personal-documents', upload.any(), async (req, res) => {
 
+	if(req.files.length === 0) return res.status(204).send();
 	const personalDocuments = req.files.map(file => {
 		return {documentType: file.fieldname, originalname: file.originalname, filename: file.filename,  mimetype: file.mimetype, size: file.size }
 	})
-
 	try {
-		const user = await User.findOneAndUpdate({ email:  req.query.userEmail }, {personalDocuments: personalDocuments }, { new: true });
+		const user = await User.findOne({ email: req.query.userEmail });
 
 		if (!user) {
 			return res.status(404).send();
 		}
-		res.send(user);
+
+		const updatedDocuments = personalDocuments.forEach((document) => {
+			const indexToUpdate = user.personalDocuments.findIndex(doc => doc.documentType === document.documentType);
+			if (indexToUpdate >= 0) {
+				user.personalDocuments[indexToUpdate] = document;
+			} else {
+				user.personalDocuments.push(document);
+			}
+		});
+
+		const updateUser = await User.findOneAndUpdate({ email:  req.query.userEmail }, {personalDocuments: user.personalDocuments }, { new: true });
+		res.send(updateUser);
 	} catch (error) {
-		console.log(error)
+		console.log(error);
 		res.status(500).send(error);
 	}
 });
@@ -247,7 +258,7 @@ router.get('/get-application-form-data/:dataType', async (req, res) => {
 	}
 });
 
-router.get('/files/:filename', (req, res) => {
+/*router.get('/files/:filename', (req, res) => {
 	const { filename } = req.params;
 	const filePath = path.join(__dirname, '../documents/users/', filename);
 	const stat = fs.statSync(filePath);
@@ -258,8 +269,8 @@ router.get('/files/:filename', (req, res) => {
 	});
 
 	const stream = fs.createReadStream(filePath);
-	console.log(res)
 	stream.pipe(res);
-});
+});*/
+
 
 module.exports = router;

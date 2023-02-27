@@ -68,7 +68,6 @@ router.get('/', async (req, res) => {
 
 router.get('/search', async (req, res) => {
 	try {
-		console.log(req.query)
 		const propertiesList = await User.aggregate([
 			{
 				$lookup: {
@@ -114,6 +113,7 @@ router.get('/search', async (req, res) => {
 	}
 });
 
+
 router.post('/create',  async (req, res) => {
 
 	const property = new Property({
@@ -139,6 +139,7 @@ router.post('/create',  async (req, res) => {
 		res.status(400).send(err);
 	}
 });
+
 
 router.patch('/:id', upload.array("images"), async (req, res) => {
 
@@ -237,6 +238,8 @@ router.patch('/title-description/:id', async (req, res) => {
 	}
 });
 
+
+
 router.delete('/:id',async (req, res) => {
 	try {
 		const deleteProperty= await Property.findOneAndUpdate({_id:  mongoose.Types.ObjectId(req.params.id)}, { deleted: true } );
@@ -249,19 +252,47 @@ router.delete('/:id',async (req, res) => {
 
 // documents
 
-router.post('/documents', uploadDocument.array('propertyDocuments'), async (req, res) => {
+router.get('/documents/:userEmail', async (req, res) => {
+	try {
+		const propertiesList = await User.aggregate([
+			{$match: {email: req.params.userEmail}},
+			{
+				$lookup: {
+					from: Property.collection.name,
+					localField: "properties",
+					foreignField: "_id",
+					as: "properties",
+				},
+			},
+			{"$unwind": "$properties" },
+			{$match: {"properties.deleted": false}},
+			{
+				$lookup: {
+					from: Document.collection.name,
+					localField: "properties.documents",
+					foreignField: "_id",
+					as: "properties.documents",
+				},
+			},
+			// Add a $match stage to filter out deleted documents
 
+		]);
+		res.send(propertiesList)
+	} catch (err) {
+		console.log(err)
+		res.status(400).send(err);
+	}
+});
+
+router.post('/documents', uploadDocument.array('propertyDocuments'), async (req, res) => {
 	try {
 		const document = new Document({
 			documentTitle: req.body.title,
-			fileName: req.files[0].filename,
-			startDate: req.body.startDate,
-			endDate: req.body.endDate,
 			documentType: req.body.documentType,
-			price: parseInt(req.body.price),
+			filename: req.files[0].filename,
+			originalname: req.files[0].originalname,
 			note: req.body.note,
 		});
-
 		const saveDocument = await document.save();
 		const property = await Property.updateOne(
 			{_id:  mongoose.Types.ObjectId(req.body.propertyId)},
@@ -271,11 +302,18 @@ router.post('/documents', uploadDocument.array('propertyDocuments'), async (req,
 		res.send(property);
 	} catch (err) {
 		res.status(400).send(err);
-		console.log(err)
 	}
 });
 
-
+router.delete('/documents/:id',async (req, res) => {
+	try {
+		const deleteDocument= await Document.findOneAndUpdate({_id:  mongoose.Types.ObjectId(req.params.id)}, { deleted: true } );
+		res.send(deleteDocument)
+	} catch (err) {
+		console.log(err)
+		res.status(400).send(err);
+	}
+});
 
 
 

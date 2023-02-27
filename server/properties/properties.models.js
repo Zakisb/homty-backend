@@ -6,24 +6,25 @@ const documentSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    fileName: {
-        type: String,
-        required: true,
-    },
-    startDate: {
-        type:Date
-    },
-    endDate: {
-        type:Date
-    },
     documentType:{
         type:String
     },
-    price:{
-        type:Number
+    originalname: {
+        type: String,
+    },
+    filename: {
+        type: String,
     },
     note: {
         type:String
+    },
+    dateAdded: {
+        type:Date,
+        default: new Date()
+    },
+    deleted: {
+        type:Boolean,
+        default:false
     }
 });
 
