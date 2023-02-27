@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -15,6 +16,18 @@ const storage = multer.diskStorage({
 	},
 });
 const upload = multer({ storage: storage});
+
+
+
+router.get('/', async (req, res) => {
+	const user = await User.findOne({ email: req.query.userEmail }, { password: 0 } );
+	try {
+		console.log(user)
+		res.send(user);
+	} catch (error) {
+		res.status(500).send(error);
+	}
+});
 
 router.post('/sign-up', async (req, res) => {
 	// CHECK IF EMAIL EXISTS IS CORRECT
@@ -150,20 +163,9 @@ router.post('/update-application-form', async (req, res) => {
 	}
 });
 
-router.patch('/update-personal-informations', upload.any(),  async (req, res) => {
-
-	const personalDocuments =  req.files.filter(file => file.fieldname === 'personalDocuments').map(function(item) {
-		return item.filename
-	})
-
-	const garantPersonalDocuments =  req.files.filter(file => file.fieldname === 'garantPersonalDocuments').map(function(item) {
-		return item.filename
-	})
+router.patch('/update-personal-informations', async (req, res) => {
 
 	try {
-		req.body.personalDocuments = personalDocuments
-		req.body.garantPersonalDocuments = garantPersonalDocuments
-
 		const user = await User.findOneAndUpdate({ email:  req.query.userEmail }, {personalInformations: req.body }, { new: true });
 		if (!user) {
 			return res.status(404).send();
@@ -171,6 +173,36 @@ router.patch('/update-personal-informations', upload.any(),  async (req, res) =>
 		res.send(user);
 	} catch (error) {
 		console.log(error)
+		res.status(500).send(error);
+	}
+});
+
+router.patch('/update-personal-documents', upload.any(), async (req, res) => {
+
+	if(req.files.length === 0) return res.status(204).send();
+	const personalDocuments = req.files.map(file => {
+		return {documentType: file.fieldname, originalname: file.originalname, filename: file.filename,  mimetype: file.mimetype, size: file.size }
+	})
+	try {
+		const user = await User.findOne({ email: req.query.userEmail });
+
+		if (!user) {
+			return res.status(404).send();
+		}
+
+		const updatedDocuments = personalDocuments.forEach((document) => {
+			const indexToUpdate = user.personalDocuments.findIndex(doc => doc.documentType === document.documentType);
+			if (indexToUpdate >= 0) {
+				user.personalDocuments[indexToUpdate] = document;
+			} else {
+				user.personalDocuments.push(document);
+			}
+		});
+
+		const updateUser = await User.findOneAndUpdate({ email:  req.query.userEmail }, {personalDocuments: user.personalDocuments }, { new: true });
+		res.send(updateUser);
+	} catch (error) {
+		console.log(error);
 		res.status(500).send(error);
 	}
 });
@@ -218,15 +250,27 @@ router.patch('/update-passions-list', async (req, res) => {
 });
 
 router.get('/get-application-form-data/:dataType', async (req, res) => {
-
 	const answers = await User.findOne({ email: req.query.userEmail }, `${req.params.dataType}` );
-
 	try {
-		console.log(answers)
 		res.send(answers);
 	} catch (error) {
 		res.status(500).send(error);
 	}
 });
+
+/*router.get('/files/:filename', (req, res) => {
+	const { filename } = req.params;
+	const filePath = path.join(__dirname, '../documents/users/', filename);
+	const stat = fs.statSync(filePath);
+
+	res.writeHead(200, {
+		'Content-Type': 'application/pdf',
+		'Content-Length': stat.size
+	});
+
+	const stream = fs.createReadStream(filePath);
+	stream.pipe(res);
+});*/
+
 
 module.exports = router;

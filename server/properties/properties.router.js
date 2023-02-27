@@ -1,10 +1,11 @@
 const router = require('express').Router();
-const Property = require('./properties.models');
+const { Document, Property } = require('./properties.models');
 const mongoose = require('mongoose');
 const User = require('../users/users.models');
 const multer = require("multer");
 const path = require('path');
 const Room = require('../rooms/rooms.models');
+const { v4: uuidv4 } = require('uuid');
 
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -15,6 +16,19 @@ const storage = multer.diskStorage({
 	},
 });
 const upload = multer({ storage: storage});
+
+const documentStorage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, path.resolve(__dirname, '..', 'documents/properties'))
+	},
+	filename: function (req, file, cb) {
+		cb(null, Date.now()  + file.originalname);
+	},
+});
+
+const uploadDocument = multer({ storage: documentStorage});
+
+
 
 router.get('/', async (req, res) => {
 	try {
@@ -54,7 +68,6 @@ router.get('/', async (req, res) => {
 
 router.get('/search', async (req, res) => {
 	try {
-		console.log(req.query)
 		const propertiesList = await User.aggregate([
 			{
 				$lookup: {
@@ -100,6 +113,7 @@ router.get('/search', async (req, res) => {
 	}
 });
 
+
 router.post('/create',  async (req, res) => {
 
 	const property = new Property({
@@ -125,6 +139,7 @@ router.post('/create',  async (req, res) => {
 		res.status(400).send(err);
 	}
 });
+
 
 router.patch('/:id', upload.array("images"), async (req, res) => {
 
@@ -211,7 +226,6 @@ router.get('/owner/:id', async (req, res) => {
 
 
 router.patch('/title-description/:id', async (req, res) => {
-	console.log(req.body)
 
 	try {
 		const property = await Property.findByIdAndUpdate(req.params.id, {
@@ -224,6 +238,8 @@ router.patch('/title-description/:id', async (req, res) => {
 	}
 });
 
+
+
 router.delete('/:id',async (req, res) => {
 	try {
 		const deleteProperty= await Property.findOneAndUpdate({_id:  mongoose.Types.ObjectId(req.params.id)}, { deleted: true } );
@@ -233,5 +249,72 @@ router.delete('/:id',async (req, res) => {
 		res.status(400).send(err);
 	}
 });
+
+// documents
+
+router.get('/documents/:userEmail', async (req, res) => {
+	try {
+		const propertiesList = await User.aggregate([
+			{$match: {email: req.params.userEmail}},
+			{
+				$lookup: {
+					from: Property.collection.name,
+					localField: "properties",
+					foreignField: "_id",
+					as: "properties",
+				},
+			},
+			{"$unwind": "$properties" },
+			{$match: {"properties.deleted": false}},
+			{
+				$lookup: {
+					from: Document.collection.name,
+					localField: "properties.documents",
+					foreignField: "_id",
+					as: "properties.documents",
+				},
+			},
+			// Add a $match stage to filter out deleted documents
+
+		]);
+		res.send(propertiesList)
+	} catch (err) {
+		console.log(err)
+		res.status(400).send(err);
+	}
+});
+
+router.post('/documents', uploadDocument.array('propertyDocuments'), async (req, res) => {
+	try {
+		const document = new Document({
+			documentTitle: req.body.title,
+			documentType: req.body.documentType,
+			filename: req.files[0].filename,
+			originalname: req.files[0].originalname,
+			note: req.body.note,
+		});
+		const saveDocument = await document.save();
+		const property = await Property.updateOne(
+			{_id:  mongoose.Types.ObjectId(req.body.propertyId)},
+			{$push: {documents: saveDocument._id}}
+		);
+
+		res.send(property);
+	} catch (err) {
+		res.status(400).send(err);
+	}
+});
+
+router.delete('/documents/:id',async (req, res) => {
+	try {
+		const deleteDocument= await Document.findOneAndUpdate({_id:  mongoose.Types.ObjectId(req.params.id)}, { deleted: true } );
+		res.send(deleteDocument)
+	} catch (err) {
+		console.log(err)
+		res.status(400).send(err);
+	}
+});
+
+
 
 module.exports = router;
