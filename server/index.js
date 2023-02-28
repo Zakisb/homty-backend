@@ -26,12 +26,16 @@ app.use("/properties", properties);
 const chats = require("./chats/chats.router");
 app.use("/", chats);
 
-//roons routes
+//rooms routes
 const rooms = require("./rooms/rooms.router");
 app.use("/rooms", rooms);
 
 //applications routes
 const applications = require("./applications/applications.router");
 app.use("/applications", applications);
+
+//payments routes
+const payments = require("./payments/payments.router");
+app.use("/payments", payments);
 
 app.listen(port, () => console.log(`Server started on port ${port}`));
