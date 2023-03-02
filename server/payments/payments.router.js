@@ -1,12 +1,12 @@
 const router = require('express').Router();
 const multer = require('multer');
 const path = require('path');
-const Property = require('../properties/properties.models');
 const User = require('../users/users.models');
 const { Payment } = require('./payments.models');
 const randomstring = require("randomstring");
 const mongoose = require('mongoose');
-const { Document } = require('../properties/properties.models');
+const { Document, Property } = require('../properties/properties.models');
+const Room = require('../rooms/rooms.models');
 
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -59,6 +59,8 @@ router.post('/', upload.array('paymentDocuments'), async (req, res) => {
 
 		const saveDocument = await document.save();
 
+		console.log(saveDocument)
+
 		// Create a new payment object with the required fields
 		const payment = new Payment({
 			landlordId: findUser._id,
@@ -69,11 +71,83 @@ router.post('/', upload.array('paymentDocuments'), async (req, res) => {
 			paymentMethod: req.body.paymentMethod,
 			paymentDate: req.body.paymentDate,
 			paymentDescription: req.body.paymentDescription,
-			document: saveDocument._id
+			documentId: saveDocument._id
 		});
 
 		const result = await createPayment(payment);
 		res.status(201).json(result);
+	} catch (err) {
+		console.log(err);
+		res.status(400).send(err);
+	}
+});
+
+router.get('/', upload.array('paymentDocuments'), async (req, res) => {
+
+	try {
+		// Find user
+		const findUser = await User.findOne({ email: req.query.userEmail });
+		// Get payments list
+		const paymentsList = await Payment.aggregate([
+			{$match: {landlordId: mongoose.Types.ObjectId(findUser._id)}},
+			{
+				$lookup: {
+					from: Property.collection.name,
+					localField: "propertyId",
+					foreignField: "_id",
+					as: "property",
+				},
+			},
+			{"$unwind": "$property"},
+			{
+				$lookup: {
+					from: Document.collection.name,
+					localField: "documentId",
+					foreignField: "_id",
+					as: "document",
+				},
+			},
+			{"$unwind": "$document"},
+			{
+				$group: {
+					_id: "$property._id",
+					propertyTitle: {
+						$first: "$property.title"
+					},
+					subRows: {
+						$push: {
+							_id: "$_id",
+							paymentDate: "$paymentDate",
+							deleted: "$deleted",
+							paymentType: "$paymentType",
+							paymentAmount:  {
+								$cond: [
+									{ $eq: ["$paymentType", "expense"] },
+									{ $multiply: ["$paymentAmount", -1] },
+									"$paymentAmount"
+								]
+							},
+							paymentCategory: "$paymentCategory",
+							paymentMethod: "$paymentMethod",
+							paymentDescription: "$paymentDescription",
+							paymentDocument: "$document",
+							uuid: "$uuid",
+						}
+					},
+				}
+			},
+			{
+				$project: {
+					_id: 1,
+					propertyTitle: 1,
+					subRows: 1,
+					total: {
+						$sum: "$subRows.paymentAmount"
+					}
+				}
+			}
+		]);
+		res.status(201).send(paymentsList);
 	} catch (err) {
 		console.log(err);
 		res.status(400).send(err);
