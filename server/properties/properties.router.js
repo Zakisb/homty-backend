@@ -127,7 +127,7 @@ router.post('/create',  async (req, res) => {
 		baths: '',
 		bedrooms: ''
 	});
-	console.log(property)
+
 	try {
 		const savePropery = await property.save();
 		const propertyOwner = await User.updateOne(
@@ -275,7 +275,21 @@ router.get('/documents/:userEmail', async (req, res) => {
 				},
 			},
 			// Add a $match stage to filter out deleted documents
-
+			{
+				$project: {
+					_id: null,
+					property: "$properties"
+				}
+			},
+			{"$unwind": "$property.documents" },
+			{$match: {"property.documents.deleted": false}},
+			{
+				$group : {
+					_id : "$property._id",
+					"property":{"$first":"$$ROOT"},
+				}
+			},
+			{"$replaceRoot":{"newRoot":"$property"}}
 		]);
 		res.send(propertiesList)
 	} catch (err) {
