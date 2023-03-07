@@ -21,10 +21,25 @@ const applicationSchema = new mongoose.Schema({
 		type: Date,
 		default: new Date(),
 	},
+	visitDate: {
+		type:Date
+	},
+	movingDate: {
+		type:Date
+	},
+	leavingDate: {
+		type:Date
+	},
 	applicationPrice: {
 		type: Number,
 	},
 	applicationStatus: {
+		type: String,
+	},
+	applicationStatusLandlord: {
+		type: String,
+	},
+	applicationStatusTenant: {
 		type: String,
 	},
 	applicationStatusHistory: [],
