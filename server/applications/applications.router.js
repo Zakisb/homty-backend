@@ -5,7 +5,7 @@ const Room = require('../rooms/rooms.models');
 const multer = require('multer');
 const path = require('path');
 const Application = require('./applications.models');
-const Property = require('../properties/properties.models');
+const { Property } = require('../properties/properties.models');
 
 router.get('/', async (req, res) => {
 	try {
@@ -22,7 +22,6 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:email', async (req, res) => {
-
 	try {
 		/*	const property = await Property.findOne({ _id:  mongoose.Types.ObjectId(req.params.id)});*/
 		const ownerId = await User.findOne({ email: req.params.email });
@@ -58,13 +57,13 @@ router.get('/:email', async (req, res) => {
 		]);
 		res.send(property);
 	} catch (err) {
+		console.log(err)
 		res.status(400).send(err);
 	}
 
 });
 
 router.get('/my-applications/:email', async (req, res) => {
-	console.log(req.params.email)
 	try {
 		/*	const property = await Property.findOne({ _id:  mongoose.Types.ObjectId(req.params.id)});*/
 		const applicantId = await User.findOne({ email: req.params.email });
@@ -106,7 +105,6 @@ router.get('/my-applications/:email', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-
 	try {
 		const findApplicatId = await User.findOne({ email: req.body.userEmail });
 		const application = new Application({
@@ -115,8 +113,10 @@ router.post('/', async (req, res) => {
 			ownerId: mongoose.Types.ObjectId(req.body.ownerId),
 			propertyId: mongoose.Types.ObjectId(req.body.propertyId),
 			applicationPrice: req.body.applicationPrice,
-			applicationStatus: 'Pending',
-			applicationStatusHistory: [{ Status: 'Pending', Date: new Date() }]
+			applicationStatus: 'Applied',
+			applicationStatusLandlord: 'Pending',
+			applicationStatusTenant: 'Waiting for approval',
+			applicationStatusHistory: [{ title: 'Pending', date: new Date(), description: `Application sent by ${findApplicatId.firstName} ${findApplicatId.lastName}`}]
 		});
 		const saveApplication = await application.save();
 		res.send(saveApplication);
@@ -127,13 +127,24 @@ router.post('/', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
 	try {
+		const currentApplication = await Application.findById(req.params.id);
+		const newMovingDate = req.body.movingDate ? req.body.movingDate : currentApplication.movingDate;
+		const newVisiteDate = req.body.visitDate ? req.body.visitDate : currentApplication.visitDate;
+
 		const application = await Application.findByIdAndUpdate(req.params.id, {
-			applicationStatus: req.body.status,
-			$push: { applicationStatusHistory: { Status: req.body.status, Date: new Date() } }
+			applicationStatusLandlord: req.body.applicationStatusLandlord,
+			applicationStatusTenant: req.body.applicationStatusTenant,
+			applicationStatus: req.body.applicationStatus,
+			movingDate: newMovingDate,
+			visitDate: newVisiteDate,
+			$push: { applicationStatusHistory: req.body.applicationStatusHistory }
 		}, { new: true });
-		/*if (!application) {
+
+
+		if (!application) {
 			return res.status(404).send();
-		}*/
+		}
+		console.log(application)
 		res.send(application);
 	} catch (err) {
 		console.log(err);
