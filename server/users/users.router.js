@@ -29,6 +29,16 @@ router.get('/', async (req, res) => {
 	}
 });
 
+router.get('/:id', async (req, res) => {
+
+	const user = await User.findOne({ _id: mongoose.Types.ObjectId(req.params.id)}, { password: 0 } );
+	try {
+		res.send(user);
+	} catch (error) {
+		res.status(500).send(error);
+	}
+});
+
 router.post('/sign-up', async (req, res) => {
 	// CHECK IF EMAIL EXISTS IS CORRECT
 	const emailCheck = await User.findOne({ email: req.body.email });
@@ -178,28 +188,38 @@ router.patch('/update-personal-informations', async (req, res) => {
 });
 
 router.patch('/update-personal-documents', upload.any(), async (req, res) => {
+	const tenantDocs = [{ document: 'Personal ID', value: 'personalId' },{ document: 'Pay slip/certificate', value: 'paySlipCertificate' },{ document: 'Garantie visale', value: 'garantieVisale' },];
+	const garantDocs = [{ document: 'Personal ID', value: 'garantPersonalId' },{ document: 'Garant pay slip', value: 'garantPaySlipCertificate' },{ document: 'Proof of address', value: 'garantProofOfAddress' }];
+
+	function updateDocuments(documents, userDocuments) {
+		documents.forEach((document) => {
+			const indexToUpdate = userDocuments.findIndex(doc => doc.documentType === document.documentType);
+			if (indexToUpdate >= 0) {
+				userDocuments[indexToUpdate] = document;
+			} else {
+				userDocuments.push(document);
+			}
+		});
+		return userDocuments;
+	}
 
 	if(req.files.length === 0) return res.status(204).send();
-	const personalDocuments = req.files.map(file => {
-		return {documentType: file.fieldname, originalname: file.originalname, filename: file.filename,  mimetype: file.mimetype, size: file.size }
+
+	const personalDocuments = req.files.filter(file => tenantDocs.some(doc => doc.value === file.fieldname)).map(file => {
+			return {name: tenantDocs.find(doc => doc.value === file.fieldname).document, documentType: file.fieldname, originalname: file.originalname, filename: file.filename,  mimetype: file.mimetype, size: file.size }
 	})
+
+	const garantDocuments = req.files.filter(file => garantDocs.some(doc => doc.value === file.fieldname)).map(file => {
+			return {name: garantDocs.find(doc => doc.value === file.fieldname).document, documentType: file.fieldname, originalname: file.originalname, filename: file.filename,  mimetype: file.mimetype, size: file.size }
+	})
+
 	try {
 		const user = await User.findOne({ email: req.query.userEmail });
 
 		if (!user) {
 			return res.status(404).send();
 		}
-
-		const updatedDocuments = personalDocuments.forEach((document) => {
-			const indexToUpdate = user.personalDocuments.findIndex(doc => doc.documentType === document.documentType);
-			if (indexToUpdate >= 0) {
-				user.personalDocuments[indexToUpdate] = document;
-			} else {
-				user.personalDocuments.push(document);
-			}
-		});
-
-		const updateUser = await User.findOneAndUpdate({ email:  req.query.userEmail }, {personalDocuments: user.personalDocuments }, { new: true });
+		const updateUser = await User.findOneAndUpdate({ email:  req.query.userEmail }, {personalDocuments: updateDocuments(personalDocuments, user.personalDocuments), garantDocuments: updateDocuments(garantDocuments, user.garantDocuments) }, { new: true });
 		res.send(updateUser);
 	} catch (error) {
 		console.log(error);

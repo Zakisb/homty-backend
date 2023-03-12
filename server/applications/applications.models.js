@@ -13,6 +13,7 @@ const applicationSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Room",
 	},
+	roomsCheckinNotes:{},
 	propertyId:  {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Property",
@@ -25,6 +26,9 @@ const applicationSchema = new mongoose.Schema({
 		type:Date
 	},
 	movingDate: {
+		type:Date
+	},
+	startDate: {
 		type:Date
 	},
 	leavingDate: {
