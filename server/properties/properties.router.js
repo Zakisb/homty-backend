@@ -28,7 +28,16 @@ const documentStorage = multer.diskStorage({
 
 const uploadDocument = multer({ storage: documentStorage});
 
+router.get('/:id', async (req, res) => {
+	try {
+		const property = await Property.findById(mongoose.Types.ObjectId(req.params.id))
+	    if(!property) return res.status(404).send({message: 'Property not found'})
 
+		res.send(property)
+	} catch (err) {
+		res.status(400).send(err);
+	}
+});
 
 router.get('/', async (req, res) => {
 	try {
@@ -53,10 +62,21 @@ router.get('/', async (req, res) => {
 				},
 			},
 			{
+				$match: {
+					"rooms.deleted": false
+				}
+			},
+			{
 				$project: {
 					_id:null,
 					property: "$properties",
-					rooms: "$rooms",
+					rooms: {
+						$filter: {
+							input: "$rooms",
+							as: "room",
+							cond: { $eq: ["$$room.deleted", false] },
+						},
+					},
 				},
 			},
 		]);
@@ -143,28 +163,19 @@ router.post('/create',  async (req, res) => {
 
 router.patch('/:id', upload.array("images"), async (req, res) => {
 
-	const images = req.files.map(function(item) {
-		return item.filename
-	})
-
 	try {
-		const property = await Property.findByIdAndUpdate(req.params.id, {
-			title: req.body.title,
-			description: req.body.description,
-			type: req.body.type,
-			address: JSON.parse(req.body.address),
-			surface: req.body.surface,
-			commonSpaces: req.body.commonSpaces,
-			bedrooms: req.body.bedroomsNumber,
-			baths: req.body.bathsNumber,
-			images: images
-		}, { new: true });
+		const uploadedImages = req.files.map(function(item) {
+			return item.filename
+		})
+		const images = [...uploadedImages, ...req.body.images]
+		req.body.images = images
+		const property = await Property.findByIdAndUpdate(req.params.id, { ...req.body, address:  JSON.parse(req.body.address) }, { new: true });
+
 		if (!property) {
 			return res.status(404).send();
 		}
-		res.send(true);
+		res.send(property);
 	} catch (err) {
-		console.log(err)
 		res.status(400).send(err);
 	}
 });

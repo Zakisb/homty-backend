@@ -28,7 +28,7 @@ const applicationSchema = new mongoose.Schema({
 	movingDate: {
 		type:Date
 	},
-	startDate: {
+	rentStartDate: {
 		type:Date
 	},
 	leavingDate: {

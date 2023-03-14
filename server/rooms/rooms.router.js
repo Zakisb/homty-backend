@@ -18,7 +18,7 @@ const upload = multer({ storage: storage});
 
 
 router.post('/',  upload.array('images'), async (req, res) => {
-	console.log(req.body)
+
 	const images = req.files.map(function(item) {
 		return item.filename
 	})
@@ -47,6 +47,18 @@ router.post('/',  upload.array('images'), async (req, res) => {
 	}
 });
 
+router.get('/:id', async (req, res) => {
+	try {
+		const room = await Room.findById(mongoose.Types.ObjectId(req.params.id))
+		if(!room) return res.status(404).send({message: 'Room not found'})
+
+		res.send(room)
+	} catch (err) {
+		console.log(err)
+		res.status(400).send(err);
+	}
+
+});
 
 router.get('/', async (req, res) => {
 	try {
@@ -75,22 +87,20 @@ router.get('/', async (req, res) => {
 });
 
 router.patch('/:id', upload.array('images'),async (req, res) => {
-	const images = req.files.map(function(item) {
-		return item.filename
-	})
-	for(element in req.body) {
-		req.body[element] =  JSON.parse(req.body[element])
-	}
-	req.body.images = images
 
 	try {
-		const updatedDocument = await Room.findOneAndUpdate(
+		const uploadedImages = req.files.map(function(item) {
+			return item.filename
+		})
+		const images = [...uploadedImages, ...(Array.isArray(req.body.images) ? req.body.images : [req.body.images])]
+		const keywords = req.body.keywords ? req.body.keywords : [];
+		const updatedRoom = await Room.findOneAndUpdate(
 			{ _id:   mongoose.Types.ObjectId(req.params.id) }, // find by _id
-			{ $set: req.body }, // data to update
-			{ upsert: true, new: true,  } // options - upsert creates new document if not exists, new returns updated document
+			{... req.body, images: images, keywords: keywords } , // data to update
+			{new: true,  } // options - upsert creates new document if not exists, new returns updated document
 		);
 
-		res.send(updatedDocument);
+		res.send(updatedRoom);
 	} catch (err) {
 		console.log(err)
 		res.status(400).send(err);
@@ -98,7 +108,6 @@ router.patch('/:id', upload.array('images'),async (req, res) => {
 });
 
 router.delete('/:id',async (req, res) => {
-
 	try {
 		const deleteRoom = await Room.findOneAndUpdate({_id:  mongoose.Types.ObjectId(req.params.id)}, { deleted: true } );
 		res.send(deleteRoom)

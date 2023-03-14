@@ -112,13 +112,13 @@ router.post('/', async (req, res) => {
 			ownerId: mongoose.Types.ObjectId(req.body.ownerId),
 			propertyId: mongoose.Types.ObjectId(req.body.propertyId),
 			applicationPrice: req.body.applicationPrice,
-			applicationStatus: 'Applied',
-			applicationStatusLandlord: 'Pending',
-			applicationStatusTenant: 'Waiting for approval',
 			applicationStatusHistory: [{
 				title: 'Pending',
 				date: new Date(),
-				description: `Application sent by ${findApplicatId.firstName} ${findApplicatId.lastName}`
+				description: `Application sent by ${findApplicatId.firstName} ${findApplicatId.lastName}`,
+				applicationStatusLandlord: 'Application Pending',
+				applicationStatusTenant: 'Waiting for approval',
+				applicationStatus: 'Applied',
 			}]
 		});
 		const saveApplication = await application.save();
@@ -131,14 +131,15 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
 	try {
 		const currentApplication = await Application.findById(req.params.id);
+
 		const newMovingDate = req.body.movingDate ? req.body.movingDate : currentApplication.movingDate;
 		const newVisiteDate = req.body.visitDate ? req.body.visitDate : currentApplication.visitDate;
-		const newStartDate = req.body.startDate ? req.body.startDate : currentApplication.startDate;
+		const newRentStartDate = req.body.rentStartDate ? req.body.rentStartDate : currentApplication.rentStartDate;
 
 		const application = await Application.findByIdAndUpdate(req.params.id, {
 			movingDate: newMovingDate,
 			visitDate: newVisiteDate,
-			startDate:newStartDate,
+			rentStartDate: newRentStartDate,
 			$push: { applicationStatusHistory: req.body.applicationStatusHistory }
 		}, { new: true });
 
