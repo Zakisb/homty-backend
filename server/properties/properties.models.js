@@ -38,10 +38,10 @@ const propertySchema = new mongoose.Schema({
         type: String,
     },
     baths: {
-        type: String,
+        type: Number,
     },
     bedrooms: {
-        type: String,
+        type: Number,
     },
     type: {
       type:String

@@ -7,6 +7,8 @@ const path = require('path');
 const Application = require('./applications.models');
 const { Property } = require('../properties/properties.models');
 
+
+
 router.get('/', async (req, res) => {
 	try {
 		const findApplicatId = await User.findOne({ email: req.query.applicantEmail });
@@ -14,7 +16,6 @@ router.get('/', async (req, res) => {
 			applicantId: mongoose.Types.ObjectId(findApplicatId._id),
 			roomId: mongoose.Types.ObjectId(req.query.roomId)
 		});
-
 		res.send(findApplicatiom);
 	} catch (err) {
 		console.log(err);
@@ -23,7 +24,6 @@ router.get('/', async (req, res) => {
 
 router.get('/:email', async (req, res) => {
 	try {
-		/*	const property = await Property.findOne({ _id:  mongoose.Types.ObjectId(req.params.id)});*/
 		const ownerId = await User.findOne({ email: req.params.email });
 		const property = await Application.aggregate([
 			{ $match: { ownerId: mongoose.Types.ObjectId(ownerId._id) } },
@@ -57,15 +57,17 @@ router.get('/:email', async (req, res) => {
 		]);
 		res.send(property);
 	} catch (err) {
-		console.log(err)
+		console.log(err);
 		res.status(400).send(err);
 	}
 
 });
 
+
+
+
 router.get('/my-applications/:email', async (req, res) => {
 	try {
-		/*	const property = await Property.findOne({ _id:  mongoose.Types.ObjectId(req.params.id)});*/
 		const applicantId = await User.findOne({ email: req.params.email });
 		const property = await Application.aggregate([
 			{ $match: { applicantId: mongoose.Types.ObjectId(applicantId._id) } },
@@ -113,10 +115,14 @@ router.post('/', async (req, res) => {
 			ownerId: mongoose.Types.ObjectId(req.body.ownerId),
 			propertyId: mongoose.Types.ObjectId(req.body.propertyId),
 			applicationPrice: req.body.applicationPrice,
-			applicationStatus: 'Applied',
-			applicationStatusLandlord: 'Pending',
-			applicationStatusTenant: 'Waiting for approval',
-			applicationStatusHistory: [{ title: 'Pending', date: new Date(), description: `Application sent by ${findApplicatId.firstName} ${findApplicatId.lastName}`}]
+			applicationStatusHistory: [{
+				title: 'Pending',
+				date: new Date(),
+				description: `Application sent by ${findApplicatId.firstName} ${findApplicatId.lastName}`,
+				applicationStatusLandlord: 'Application Pending',
+				applicationStatusTenant: 'Waiting for approval',
+				applicationStatus: 'Applied',
+			}]
 		});
 		const saveApplication = await application.save();
 		res.send(saveApplication);
@@ -128,23 +134,21 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
 	try {
 		const currentApplication = await Application.findById(req.params.id);
+
 		const newMovingDate = req.body.movingDate ? req.body.movingDate : currentApplication.movingDate;
 		const newVisiteDate = req.body.visitDate ? req.body.visitDate : currentApplication.visitDate;
+		const newRentStartDate = req.body.rentStartDate ? req.body.rentStartDate : currentApplication.rentStartDate;
 
 		const application = await Application.findByIdAndUpdate(req.params.id, {
-			applicationStatusLandlord: req.body.applicationStatusLandlord,
-			applicationStatusTenant: req.body.applicationStatusTenant,
-			applicationStatus: req.body.applicationStatus,
 			movingDate: newMovingDate,
 			visitDate: newVisiteDate,
+			rentStartDate: newRentStartDate,
 			$push: { applicationStatusHistory: req.body.applicationStatusHistory }
 		}, { new: true });
-
 
 		if (!application) {
 			return res.status(404).send();
 		}
-		console.log(application)
 		res.send(application);
 	} catch (err) {
 		console.log(err);
@@ -152,17 +156,65 @@ router.patch('/:id', async (req, res) => {
 	}
 });
 
-router.patch('/title-description/:id', async (req, res) => {
-
-	/*try {
-		const property = await Property.findByIdAndUpdate(req.params.id, {
-			title: req.body.title,
-			description: req.body.description,
-		}, { new: true });
-		res.send(property);
+router.get('/rooms-checkin/:applicationId', async (req, res) => {
+	try {
+		const findApplication = await Application.aggregate([
+			{ $match: { _id: mongoose.Types.ObjectId(req.params.applicationId) }},
+			{
+				$lookup: {
+					from: User.collection.name,
+					localField: 'ownerId',
+					foreignField: '_id',
+					as: 'owner'
+				}
+			},
+			{
+				$lookup: {
+					from: User.collection.name,
+					localField: 'applicantId',
+					foreignField: '_id',
+					as: 'applicant'
+				}
+			},
+			{ $unwind: '$applicant' },
+			{ $unwind: '$owner' },
+			{
+				$project: {
+					_id: 1,
+					ownerFullName:{ $concat: [
+							"$owner.firstName",
+							" ",
+							"$owner.lastName"
+						]},
+					applicantFullName: { $concat: [
+							"$applicant.firstName",
+							" ",
+							"$applicant.lastName"
+						]},
+					roomsCheckinNotes: 1
+				}
+			},
+		]);
+		if (!findApplication) return res.status(404).send({ message: 'Application checking rates not found.' });
+		res.send(findApplication[0]);
 	} catch (err) {
-		res.status(400).send(err);
-	}*/
+		console.log(err);
+		res.send('Error occured. Please fix your request before trying again');
+	}
 });
+
+router.patch('/rooms-checkin/:applicationId', async (req, res) => {
+	try {
+		const application = await Application.findByIdAndUpdate(req.params.applicationId, {
+			$push: { applicationStatusHistory: req.body.applicationStatusHistory }
+		}, { new: true });
+
+		const roomsChecking = await Application.findOneAndUpdate({ _id: mongoose.Types.ObjectId(req.params.applicationId) }, { roomsCheckinNotes: req.body.roomsCheckingRates }, { new: true });
+		res.send(roomsChecking);
+	} catch (err) {
+		console.log(err);
+	}
+});
+
 
 module.exports = router;
