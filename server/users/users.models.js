@@ -84,12 +84,11 @@ userSchema.virtual('isVerified').get(function() {
   const requiredDocs = ['personalId', 'paySlipCertificate', 'garantieVisale'];
   for (let i = 0; i < requiredDocs.length; i++) {
     const docType = requiredDocs[i];
-    const docExists = this.personalDocuments.some(doc => doc.documentType === docType);
+    const docExists = this.personalDocuments?.some(doc => doc.documentType === docType);
     if (!docExists) {
       return false;
     }
   }
-
   return true;
 });
 

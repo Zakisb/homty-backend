@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Room = require('./rooms.models')
 const multer = require("multer");
 const path = require('path');
-const Property = require('../properties/properties.models');
+const { Property } = require('../properties/properties.models');
 const User = require('../users/users.models');
 
 const storage = multer.diskStorage({
@@ -35,7 +35,7 @@ router.post('/',  upload.array('images'), async (req, res) => {
 
 		const saveRoom = await room.save();
 		const propertyMother = await Property.updateOne(
-			{ _id:  mongoose.Types.ObjectId(req.query.propertyId)},
+			{ _id:   mongoose.Types.ObjectId(req.query.propertyID)},
 			{$push: {rooms: saveRoom._id}}
 		);
 

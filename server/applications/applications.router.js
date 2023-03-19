@@ -7,6 +7,8 @@ const path = require('path');
 const Application = require('./applications.models');
 const { Property } = require('../properties/properties.models');
 
+
+
 router.get('/', async (req, res) => {
 	try {
 		const findApplicatId = await User.findOne({ email: req.query.applicantEmail });
@@ -22,7 +24,6 @@ router.get('/', async (req, res) => {
 
 router.get('/:email', async (req, res) => {
 	try {
-		/*	const property = await Property.findOne({ _id:  mongoose.Types.ObjectId(req.params.id)});*/
 		const ownerId = await User.findOne({ email: req.params.email });
 		const property = await Application.aggregate([
 			{ $match: { ownerId: mongoose.Types.ObjectId(ownerId._id) } },
@@ -62,9 +63,11 @@ router.get('/:email', async (req, res) => {
 
 });
 
+
+
+
 router.get('/my-applications/:email', async (req, res) => {
 	try {
-		/*	const property = await Property.findOne({ _id:  mongoose.Types.ObjectId(req.params.id)});*/
 		const applicantId = await User.findOne({ email: req.params.email });
 		const property = await Application.aggregate([
 			{ $match: { applicantId: mongoose.Types.ObjectId(applicantId._id) } },
@@ -213,16 +216,5 @@ router.patch('/rooms-checkin/:applicationId', async (req, res) => {
 	}
 });
 
-router.patch('/title-description/:id', async (req, res) => {
-	/*try {
-		const property = await Property.findByIdAndUpdate(req.params.id, {
-			title: req.body.title,
-			description: req.body.description,
-		}, { new: true });
-		res.send(property);
-	} catch (err) {
-		res.status(400).send(err);
-	}*/
-});
 
 module.exports = router;
