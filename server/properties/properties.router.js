@@ -121,7 +121,7 @@ router.get('/owner/:id', async (req, res) => {
 			properties: {
 				$in: [mongoose.Types.ObjectId(req.params.id)]
 			}
-		},).select('firstName lastName email personalInformations');
+		},).select('_id firstName lastName email personalInformations');
 		res.send(user);
 	} catch (err) {
 		console.log(err)

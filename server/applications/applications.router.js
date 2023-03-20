@@ -12,11 +12,14 @@ const { Property } = require('../properties/properties.models');
 router.get('/', async (req, res) => {
 	try {
 		const findApplicatId = await User.findOne({ email: req.query.applicantEmail });
-		const findApplicatiom = await Application.findOne({
+		const findApplication = await Application.findOne({
 			applicantId: mongoose.Types.ObjectId(findApplicatId._id),
 			roomId: mongoose.Types.ObjectId(req.query.roomId)
 		});
-		res.send(findApplicatiom);
+		if (!findApplication) {
+			return res.status(404).json({ message: 'Application not found' });
+		}
+		res.send(findApplication);
 	} catch (err) {
 		console.log(err);
 	}
@@ -108,7 +111,11 @@ router.get('/my-applications/:email', async (req, res) => {
 
 router.post('/', async (req, res) => {
 	try {
+
 		const findApplicatId = await User.findOne({ email: req.body.userEmail });
+		console.log(req.body)
+		console.log(findApplicatId._id)
+
 		const application = new Application({
 			applicantId: mongoose.Types.ObjectId(findApplicatId._id),
 			roomId: mongoose.Types.ObjectId(req.body.roomId),
@@ -116,9 +123,9 @@ router.post('/', async (req, res) => {
 			propertyId: mongoose.Types.ObjectId(req.body.propertyId),
 			applicationPrice: req.body.applicationPrice,
 			applicationStatusHistory: [{
-				title: 'Pending',
+				title: 'Application sent',
 				date: new Date(),
-				description: `Application sent by ${findApplicatId.firstName} ${findApplicatId.lastName}`,
+				description: `Application sent by the tenant`,
 				applicationStatusLandlord: 'Application Pending',
 				applicationStatusTenant: 'Waiting for approval',
 				applicationStatus: 'Applied',

@@ -21,7 +21,6 @@ const upload = multer({ storage: storage });
 async function createPayment(paymentData) {
 	let payment;
 	let isUnique = false;
-
 	while (!isUnique) {
 		// generate a new UUID for the payment
 		const uuid = randomstring.generate({
@@ -59,11 +58,9 @@ router.post('/', upload.array('paymentDocuments'), async (req, res) => {
 
 		const saveDocument = await document.save();
 
-		console.log(saveDocument)
-
 		// Create a new payment object with the required fields
 		const payment = new Payment({
-			landlordId: findUser._id,
+			landlordId: req.body.ownerId ? req.body.ownerId : findUser._id,
 			propertyId: req.body.propertyId,
 			paymentType: req.body.paymentType,
 			paymentAmount: parseInt(req.body.paymentAmount),

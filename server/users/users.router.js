@@ -300,18 +300,5 @@ router.get('/get-application-form-data/:dataType', async (req, res) => {
 	}
 });
 
-/*router.get('/files/:filename', (req, res) => {
-	const { filename } = req.params;
-	const filePath = path.join(__dirname, '../documents/users/', filename);
-	const stat = fs.statSync(filePath);
-
-	res.writeHead(200, {
-		'Content-Type': 'application/pdf',
-		'Content-Length': stat.size
-	});
-
-	const stream = fs.createReadStream(filePath);
-	stream.pipe(res);
-});*/
 
 module.exports = router;
