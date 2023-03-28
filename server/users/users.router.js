@@ -95,7 +95,6 @@ router.post('/sign-in-with-google', async (req, res) => {
 			personnalityTraits: {},
 			livingPreferences: {},
 		});
-		console.log(newUser);
 		await newUser.save();
 		return res.send(newUser);
 	} else {
