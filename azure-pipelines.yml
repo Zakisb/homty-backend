@@ -26,7 +26,6 @@ stages:
         displayName: Build
         pool:
           vmImage: $(vmImageName)
-
         steps:
           - task: NodeTool@0
             inputs:
@@ -35,7 +34,7 @@ stages:
 
           - script: |
               npm install
-              npm run dev --if-present
+              npm run start --if-present
             displayName: 'npm install, build and test'
 
           - task: ArchiveFiles@2
