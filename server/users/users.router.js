@@ -90,8 +90,12 @@ router.post('/sign-in-with-google', async (req, res) => {
 			email_verified: profile.email_verified,
 			photo: 'newUser.jpg',
 			firstName: profile.family_name,
-			lastName: profile.given_name
+			lastName: profile.given_name,
+			personalInformations : {test:'salut'},
+			personnalityTraits: {},
+			livingPreferences: {},
 		});
+		console.log(newUser);
 		await newUser.save();
 		return res.send(newUser);
 	} else {
