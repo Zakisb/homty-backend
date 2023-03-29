@@ -78,6 +78,21 @@ const userSchema = new mongoose.Schema({
     default:true,
     type: Boolean
   }
+}, { toJSON: { virtuals: true } });
+
+userSchema.virtual('isVerified').get(function() {
+  const requiredDocs = ['personalId', 'paySlipCertificate', 'garantieVisale'];
+  for (let i = 0; i < requiredDocs.length; i++) {
+    const docType = requiredDocs[i];
+    if(!this.personalDocuments) {
+      return false
+    }
+    const docExists = this.personalDocuments.some(doc => doc.documentType === docType);
+    if (!docExists) {
+      return false;
+    }
+  }
+  return true;
 });
 
 module.exports = mongoose.model("User", userSchema);
