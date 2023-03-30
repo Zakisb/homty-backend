@@ -208,6 +208,8 @@ router.patch('/:id', upload.array('images'), async (req, res) => {
 			address: JSON.parse(req.body.address)
 		}, { new: true });
 
+		console.log(req.body.images)
+
 		if (!property) {
 			return res.status(404).send();
 		}
