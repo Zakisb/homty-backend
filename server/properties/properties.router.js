@@ -10,7 +10,7 @@ const randomstring = require('randomstring');
 
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		cb(null, path.resolve(__dirname, '..', 'images/properties'));
+		cb(null,'./server/images/properties');
 	},
 	filename: function (req, file, cb) {
 		cb(null, Date.now() + file.originalname);
@@ -20,7 +20,7 @@ const upload = multer({ storage: storage });
 
 const documentStorage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		cb(null, path.resolve(__dirname, '..', 'documents/properties'));
+		cb(null, './server/documents/properties');
 	},
 	filename: function (req, file, cb) {
 		cb(null, Date.now() + file.originalname);

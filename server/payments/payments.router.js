@@ -10,7 +10,7 @@ const Room = require('../rooms/rooms.models');
 
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		cb(null, path.resolve(__dirname, '..', 'documents/payments'));
+		cb(null, './server/documents/payments');
 	},
 	filename: function (req, file, cb) {
 		cb(null, Date.now() + file.originalname);

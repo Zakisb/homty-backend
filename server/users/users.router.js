@@ -9,12 +9,14 @@ const fs = require('fs');
 
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		cb(null, path.resolve(__dirname, '..', 'documents/users'));
+		cb(null, './server/documents/users');
 	},
 	filename: function (req, file, cb) {
 		cb(null, Date.now() + file.originalname);
 	}
 });
+
+
 const upload = multer({ storage: storage });
 
 router.get('/', async (req, res) => {
@@ -190,6 +192,8 @@ router.patch('/update-personal-informations', async (req, res) => {
 
 router.patch('/update-personal-documents', upload.any(), async (req, res) => {
 
+
+
 	const tenantDocs = [{ document: 'Personal ID', value: 'personalId' }, {
 		document: 'Pay slip/certificate',
 		value: 'paySlipCertificate'
@@ -211,7 +215,7 @@ router.patch('/update-personal-documents', upload.any(), async (req, res) => {
 		return userDocuments;
 	}
 
-	if (req.files.length === 0) return res.status(204).send();
+	if (!req.files || req.files.length === 0) return res.status(204).send();
 
 	const personalDocuments = req.files.filter(file => tenantDocs.some(doc => doc.value === file.fieldname)).map(file => {
 		return {
@@ -245,8 +249,6 @@ router.patch('/update-personal-documents', upload.any(), async (req, res) => {
 			personalDocuments: updateDocuments(personalDocuments, user.personalDocuments),
 			garantDocuments: updateDocuments(garantDocuments, user.garantDocuments)
 		}, { new: true });
-		console.log( updateDocuments(personalDocuments, user.personalDocuments))
-		console.log(updateUser);
 
 		res.send(updateUser);
 	} catch (error) {

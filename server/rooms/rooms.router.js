@@ -8,7 +8,7 @@ const User = require('../users/users.models');
 
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		cb(null, path.resolve(__dirname, '..', 'images/rooms'))
+		cb(null, './server/images/rooms')
 	},
 	filename: function (req, file, cb) {
 		cb(null, Date.now() + file.originalname);
