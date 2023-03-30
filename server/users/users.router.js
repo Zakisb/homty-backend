@@ -245,6 +245,9 @@ router.patch('/update-personal-documents', upload.any(), async (req, res) => {
 			personalDocuments: updateDocuments(personalDocuments, user.personalDocuments),
 			garantDocuments: updateDocuments(garantDocuments, user.garantDocuments)
 		}, { new: true });
+		console.log( updateDocuments(personalDocuments, user.personalDocuments))
+		console.log(updateUser);
+
 		res.send(updateUser);
 	} catch (error) {
 		console.log(error);
