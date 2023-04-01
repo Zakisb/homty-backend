@@ -7,53 +7,12 @@ const path = require('path');
 const Room = require('../rooms/rooms.models');
 const { v4: uuidv4 } = require('uuid');
 const randomstring = require('randomstring');
+const { uploadFilesToGCS } = require('../utils/gcsHelper');
 
-const storage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null,'./server/images/properties');
-	},
-	filename: function (req, file, cb) {
-		cb(null, Date.now() + file.originalname);
-	}
+
+const multerGc = multer({
+	storage: multer.memoryStorage(),
 });
-const upload = multer({ storage: storage });
-
-const documentStorage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, './server/documents/properties');
-	},
-	filename: function (req, file, cb) {
-		cb(null, Date.now() + file.originalname);
-	}
-});
-
-const uploadDocument = multer({ storage: documentStorage });
-
-async function createProperty (propertyData) {
-	let property;
-	let isUnique = false;
-
-	while (!isUnique) {
-		// generate a new UUID for the payment
-		const uuid = randomstring.generate({
-			length: 12,
-			charset: 'numeric',
-			capitalization: 'lowercase'
-		});
-		// check if a property with this UUID already exists
-		property = await Property.findOne({ uuid });
-
-		if (!property) {
-			// create the payment with the unique UUID
-			property = new Property({ ...propertyData, uuid });
-			await property.save();
-
-			isUnique = true;
-		}
-	}
-
-	return property;
-}
 
 router.get('/search', async (req, res) => {
 	const { priceMin, priceMax, surfaceMin, surfaceMax } = req.query;
@@ -129,10 +88,11 @@ router.get('/owner/:id', async (req, res) => {
 	}
 });
 
-router.post('/', upload.array('images'), async (req, res) => {
+router.post('/', multerGc.any(), async (req, res) => {
 
 	try {
-		const uploadedImages = req.files.map(function (item) {
+		const filesMetadata = await uploadFilesToGCS(req.files, 'homtystorage');
+		const uploadedImages = filesMetadata.map(function (item) {
 			return item.filename;
 		});
 		const property = new Property({ ...req.body, address: JSON.parse(req.body.address), images: uploadedImages });
@@ -149,6 +109,7 @@ router.post('/', upload.array('images'), async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
+
 	try {
 		const propertiesList = await User.aggregate([
 			{ $match: { email: req.query.userEmail } },
@@ -195,10 +156,11 @@ router.get('/', async (req, res) => {
 	}
 });
 
-router.patch('/:id', upload.array('images'), async (req, res) => {
+router.patch('/:id', multerGc.any(),  async (req, res) => {
 
 	try {
-		const uploadedImages = req.files.map(function (item) {
+		const filesMetadata = await uploadFilesToGCS(req.files, 'homtystorage');
+		const uploadedImages = filesMetadata.map(function (item) {
 			return item.filename;
 		});
 		const images = [...uploadedImages, ...(Array.isArray(req.body.images) ? req.body.images : (req.body.images != null ? [req.body.images] : [])) ];
@@ -208,7 +170,6 @@ router.patch('/:id', upload.array('images'), async (req, res) => {
 			address: JSON.parse(req.body.address)
 		}, { new: true });
 
-		console.log(req.body.images)
 
 		if (!property) {
 			return res.status(404).send();
@@ -276,13 +237,14 @@ router.get('/documents/:userEmail', async (req, res) => {
 	}
 });
 
-router.post('/documents', uploadDocument.array('propertyDocuments'), async (req, res) => {
+router.post('/documents', multerGc.any(), async (req, res) => {
 	try {
+		const filesMetadata = await uploadFilesToGCS(req.files, 'homtystorage');
 		const document = new Document({
 			documentTitle: req.body.title,
 			documentType: req.body.documentType,
-			filename: req.files[0].filename,
-			originalname: req.files[0].originalname,
+			filename: filesMetadata[0].filename,
+			originalname: filesMetadata[0].originalname,
 			note: req.body.note
 		});
 		const saveDocument = await document.save();

@@ -7,16 +7,11 @@ const randomstring = require("randomstring");
 const mongoose = require('mongoose');
 const { Document, Property } = require('../properties/properties.models');
 const Room = require('../rooms/rooms.models');
+const { uploadFilesToGCS } = require('../utils/gcsHelper');
 
-const storage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, './server/documents/payments');
-	},
-	filename: function (req, file, cb) {
-		cb(null, Date.now() + file.originalname);
-	}
+const multerGc = multer({
+	storage: multer.memoryStorage(),
 });
-const upload = multer({ storage: storage });
 
 async function createPayment(paymentData) {
 	let payment;
@@ -43,16 +38,16 @@ async function createPayment(paymentData) {
 	return payment;
 }
 
-router.post('/', upload.array('paymentDocuments'), async (req, res) => {
+router.post('/', multerGc.any(), async (req, res) => {
 
 	try {
+		const filesMetadata = await uploadFilesToGCS(req.files, 'homtystorage');
 		const findUser = await User.findOne({ email: req.body.landlordEmail });
-
 		const document = new Document({
 			documentTitle: req.body.paymentType,
 			documentType: req.body.paymentCategory,
-			filename: req.files[0].filename,
-			originalname: req.files[0].originalname,
+			filename: filesMetadata[0].filename,
+			originalname: filesMetadata[0].originalname,
 			note: req.body.paymentDescription,
 		});
 
@@ -79,7 +74,7 @@ router.post('/', upload.array('paymentDocuments'), async (req, res) => {
 	}
 });
 
-router.get('/', upload.array('paymentDocuments'), async (req, res) => {
+router.get('/', async (req, res) => {
 
 	try {
 		// Find user

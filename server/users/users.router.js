@@ -1,23 +1,34 @@
 const router = require('express').Router();
 const User = require('./users.models');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { uploadFilesToGCS } = require('./../utils/gcsHelper');
 
-const storage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, './server/documents/users');
-	},
-	filename: function (req, file, cb) {
-		cb(null, Date.now() + file.originalname);
-	}
+const multerGc = multer({
+	storage: multer.memoryStorage(),
 });
 
+/*
+router.post('/upload', multerGc.any(), async (req, res) => {
+	try {
+		if (req.files && req.files.length > 0) {
+			const filesMetadata = await uploadFilesToGCS(req.files, 'homtystorage');
+			console.log('Files metadata:', filesMetadata);
 
-const upload = multer({ storage: storage });
+			// Save metadata to your database or perform other actions
+
+			res.status(200).send('Success');
+			console.log('Success');
+		} else {
+			throw 'error with img';
+		}
+	} catch (error) {
+		console.log(error);
+		res.status(500).send(error);
+	}
+});
+*/
 
 router.get('/', async (req, res) => {
 	const user = await User.findOne({ email: req.query.userEmail }, { password: 0 });
@@ -93,9 +104,9 @@ router.post('/sign-in-with-google', async (req, res) => {
 			photo: 'newUser.jpg',
 			firstName: profile.family_name,
 			lastName: profile.given_name,
-			personalInformations : {test:'salut'},
+			personalInformations: { test: 'salut' },
 			personnalityTraits: {},
-			livingPreferences: {},
+			livingPreferences: {}
 		});
 		await newUser.save();
 		return res.send(newUser);
@@ -190,9 +201,7 @@ router.patch('/update-personal-informations', async (req, res) => {
 	}
 });
 
-router.patch('/update-personal-documents', upload.any(), async (req, res) => {
-
-
+router.patch('/update-personal-documents', multerGc.any(), async (req, res) => {
 
 	const tenantDocs = [{ document: 'Personal ID', value: 'personalId' }, {
 		document: 'Pay slip/certificate',
@@ -217,28 +226,29 @@ router.patch('/update-personal-documents', upload.any(), async (req, res) => {
 
 	if (!req.files || req.files.length === 0) return res.status(204).send();
 
-	const personalDocuments = req.files.filter(file => tenantDocs.some(doc => doc.value === file.fieldname)).map(file => {
+	const filesMetadata = await uploadFilesToGCS(req.files, 'homtystorage');
+
+	const personalDocuments = filesMetadata.filter(file => tenantDocs.some(doc => doc.value === file.fieldname)).map(file => {
 		return {
 			name: tenantDocs.find(doc => doc.value === file.fieldname).document,
 			documentType: file.fieldname,
 			originalname: file.originalname,
 			filename: file.filename,
-			mimetype: file.mimetype,
+			mimetype: file.mimeType,
 			size: file.size
 		};
 	});
 
-	const garantDocuments = req.files.filter(file => garantDocs.some(doc => doc.value === file.fieldname)).map(file => {
+	const garantDocuments = filesMetadata.filter(file => garantDocs.some(doc => doc.value === file.fieldname)).map(file => {
 		return {
 			name: garantDocs.find(doc => doc.value === file.fieldname).document,
 			documentType: file.fieldname,
 			originalname: file.originalname,
 			filename: file.filename,
-			mimetype: file.mimetype,
+			mimetype: file.mimeType,
 			size: file.size
 		};
 	});
-
 	try {
 		const user = await User.findOne({ email: req.query.userEmail });
 
@@ -307,6 +317,5 @@ router.get('/get-application-form-data/:dataType', async (req, res) => {
 		res.status(500).send(error);
 	}
 });
-
 
 module.exports = router;
