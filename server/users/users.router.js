@@ -268,7 +268,7 @@ router.patch('/update-personal-documents', multerGc.any(), async (req, res) => {
 });
 
 router.patch('/update-living-preferences', async (req, res) => {
-
+	console.log(req.body)
 	try {
 		const user = await User.findOneAndUpdate({ email: req.query.userEmail }, { livingPreferences: req.body }, { new: true });
 

@@ -52,7 +52,6 @@ router.get('/:id', async (req, res) => {
 		console.log(err);
 		res.status(400).send(err);
 	}
-
 });
 
 router.get('/', async (req, res) => {
@@ -83,8 +82,6 @@ router.get('/', async (req, res) => {
 });
 
 router.patch('/:id', multerGc.any(), async (req, res) => {
-	console.log(req.files);
-	console.log(req.body);
 	try {
 		const filesMetadata = await uploadFilesToGCS(req.files, 'homtystorage');
 		const uploadedImages = filesMetadata.map(function (item) {
@@ -99,6 +96,16 @@ router.patch('/:id', multerGc.any(), async (req, res) => {
 			{ new: true } // options - upsert creates new document if not exists, new returns updated document
 		);
 
+		res.send(updatedRoom);
+	} catch (err) {
+		console.log(err);
+		res.status(400).send(err);
+	}
+});
+
+router.patch('/update-status/:id', multerGc.any(), async (req, res) => {
+	try {
+		const updatedRoom = await Room.updateOne({_id : req.params.id},{isAvailable: false});
 		res.send(updatedRoom);
 	} catch (err) {
 		console.log(err);

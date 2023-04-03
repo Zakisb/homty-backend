@@ -46,8 +46,8 @@ router.post('/', multerGc.any(), async (req, res) => {
 		const document = new Document({
 			documentTitle: req.body.paymentType,
 			documentType: req.body.paymentCategory,
-			filename: filesMetadata[0].filename,
-			originalname: filesMetadata[0].originalname,
+			filename: filesMetadata.length > 0 ? filesMetadata[0].filename : null,
+			originalname: filesMetadata.length > 0 ? filesMetadata[0].originalname : null,
 			note: req.body.paymentDescription,
 		});
 
